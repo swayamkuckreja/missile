@@ -51,7 +51,37 @@ fineness_ratio_nose_HIGH = 5  # (low drag and radar cross section)
 fineness_ratio_nose_LOW = 0.5  # (high propellant and good sensing)
 fineness_ratio_nose_MEDIUM = 2  # (compramised 'jack of all trates')
 
+# Determines current drag coefficient c_d
+def drag_coef(mach_num, fineness_ratio_body, fineness_ratio_nose,
+              powered_flight: bool, dyn_pressure, length_body, diameter_body_base, area_nozzle_exit):
+    # c_d(total) = c_d(wave) + c_d(skin fric) + c_d(base)
+    def drag_coef_wave(mach_num, fineness_ratio_nose):
+        if mach_num >= 1:
+            c_d_wave = 3.6/((fineness_ratio_nose  * (mach_num - 1)) + 3)
+        elif mach_num < 1:
+            c_d_wave = 0
+        return c_d_wave
+    c_d_wave = drag_coef_wave(mach_num, fineness_ratio_nose)
+    
+    def drag_coef_skin(fineness_ratio_body, mach_num, dyn_pressure, length_body):
+        return 0.053 * fineness_ratio_body * (mach_num/(dyn_pressure * length_body))**0.2
+    c_d_skin = drag_coef_skin(fineness_ratio_body, mach_num, dyn_pressure, length_body)
 
+    def drag_coef_base(mach_num, powered_flight, diameter_body_base):
+        if powered_flight:
+            if mach_num >= 1:
+                return 0.25/mach_num
+            elif mach_num < 1:
+                return 0.12 + 0.13 * mach_num * mach_num
+        elif not powered_flight:
+            powered_reduction_factor = 1 - (area_nozzle_exit / (np.pi * (diameter_body_base/2)**2))
+            if mach_num >= 1:
+                return  powered_reduction_factor * (0.25/mach_num)
+            elif mach_num < 1:
+                return powered_reduction_factor * (0.12 + 0.13 * mach_num * mach_num)
+    c_d_base = drag_coef_base(mach_num, powered_flight, diameter_body_base)
+    
+    return c_d_wave + c_d_skin + c_d_base
 
 
 if __name__ == '__main__':
