@@ -52,12 +52,15 @@ fineness_ratio_nose_LOW = 0.5  # (high propellant and good sensing)
 fineness_ratio_nose_MEDIUM = 2  # (compramised 'jack of all trates')
 
 # Determines current drag coefficient c_d
-def drag_coef(mach_num, fineness_ratio_body, fineness_ratio_nose,
+def drag_coef(mach_num, fineness_ratio_body, fineness_ratio_nose, blunt_nose: bool,
               powered_flight: bool, dyn_pressure, length_body, diameter_body_base, area_nozzle_exit):
     # c_d(total) = c_d(wave) + c_d(skin fric) + c_d(base)
-    def drag_coef_wave(mach_num, fineness_ratio_nose):
+    def drag_coef_wave(mach_num, fineness_ratio_nose, blunt_nose):
         if mach_num >= 1:
-            c_d_wave = 3.6/((fineness_ratio_nose  * (mach_num - 1)) + 3)
+            if blunt_nose == False:  # So a sharp/pointy nose edge
+                c_d_wave = 3.6/((fineness_ratio_nose  * (mach_num - 1)) + 3)
+            elif blunt_nose == True:  # So a slighty rounded nose edge TODO: Finish this part if time (pg. 24)
+                c_d_wave = 3.6/((fineness_ratio_nose  * (mach_num - 1)) + 3)
         elif mach_num < 1:
             c_d_wave = 0
         return c_d_wave
@@ -82,6 +85,20 @@ def drag_coef(mach_num, fineness_ratio_body, fineness_ratio_nose,
     c_d_base = drag_coef_base(mach_num, powered_flight, diameter_body_base)
     
     return c_d_wave + c_d_skin + c_d_base
+
+#-------------------------------------------------
+# 2.3) Boattailing or not
+#-------------------------------------------------
+# Whether or not to taper the back of the missile. Reduces drag by 50 percent in subsonic
+def boattailing_ratio(mach_cruise):
+    if mach_cruise < 1:
+        return 0.5  # d_boattail/d_ref(body) = 0.4 -> 0.8 typical (lower the better)
+    elif mach_cruise >= 1:
+        return 1  # No tapering for supersonic as flow sep -> increased drag
+
+#-------------------------------------------------
+# 2.4) Lifting Body or not
+#-------------------------------------------------
 
 
 if __name__ == '__main__':
