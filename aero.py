@@ -9,7 +9,7 @@ import numpy as np
 from requirements import *
 from baseline import BaselineMissile
 
-# Assume Standard SI units and type float unless explicity stated!
+# Assume Standard SI units and type: float unless explicity stated!
 
 #-------------------------------------------------
 # 2.1) Diameter Tradeoff
@@ -99,16 +99,21 @@ def boattailing_ratio(mach_cruise):
 #-------------------------------------------------
 # 2.4) Lifting Body
 #-------------------------------------------------
-# Normal force coefficient |C_n|
+# Magnitude of body normal force coefficient C_n_body (if need see sec 2.4 for C_n_alpha_body formula)
 def normal_force_coef_body(major_minor_axis_ratio_body, fineness_ratio_body, angle_of_attack, bank_angle=0):
     a = abs(major_minor_axis_ratio_body * np.cos(bank_angle) + (1/major_minor_axis_ratio_body) * np.sin(bank_angle))
     b = abs(np.sin(2 * angle_of_attack) * np.cos(angle_of_attack/2)) + 2 * fineness_ratio_body * np.sin(angle_of_attack) * np.sin(angle_of_attack)
     return a * b
 
-# Aero efficiency of the body (L_body/D_body)max is best for best alpha.
-# Usually, at const alt, 1g (L_body/D_body)max is overpredicted and alpha need is also lower usually
+# Aero efficiency of the body L_body/D_body as func of alpha (maximise)
 def lift_to_drag_ratio_body(normal_force_coef, drag_coef_zero_lift, angle_of_attack):
-    return (normal_force_coef * np.cos(angle_of_attack) - drag_coef_zero_lift * np.sin(angle_of_attack))/(normal_force_coef * np.sin(angle_of_attack) + drag_coef_zero_lift * np.cos(angle_of_attack))
+    """
+    Usually L/D is overpredicted a bit for const alt 1g flight
+    Usually alpha needed for L/D max is also overpredicted for the conditions above
+    """
+    a = (normal_force_coef * np.cos(angle_of_attack) - drag_coef_zero_lift * np.sin(angle_of_attack))
+    b = (normal_force_coef * np.sin(angle_of_attack) + drag_coef_zero_lift * np.cos(angle_of_attack))
+    return a / b
 
 # C_p location of the body
 def center_of_pressure_body(length_nose, length_body, angle_of_attack):
@@ -118,8 +123,8 @@ def center_of_pressure_body(length_nose, length_body, angle_of_attack):
 # 2.5) Wings vs No Wings
 #-------------------------------------------------
 """
-If subsonic (maybeee) add large wings
-Usually for supersonic L/D of body (see above) is usually enough due to the high dyn_pressures
+If subsonic (maybeee) add large wings (like actual ones not just tabs)
+Usually for supersonic, L/D of body (see above) is usually enough due to the high dyn_pressures
 """
 
 #-------------------------------------------------
